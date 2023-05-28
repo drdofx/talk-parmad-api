@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/drdofx/talk-parmad/internal/api/helper"
@@ -67,6 +68,8 @@ func (ctr *userController) LoginUser(c *gin.Context) {
 	}
 
 	res, err := ctr.service.LoginUser(&req)
+
+	fmt.Println(res)
 
 	if err != nil {
 		lib.CommonLogger().Error(err)

@@ -1,6 +1,7 @@
 package helper
 
 const (
-	UserExists  = "user already exists"
-	FailedLogin = "failed to login because of wrong email or password"
+	UserExists          = "user already exists"
+	FailedLogin         = "failed to login because of wrong email or password"
+	FailedGenerateToken = "failed to generate token"
 )

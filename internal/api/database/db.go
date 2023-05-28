@@ -70,6 +70,11 @@ func (d *Database) Close() error {
 func (d *Database) migrateDB() error {
 	err := d.DB.AutoMigrate(
 		models.User{},
+		models.Forum{},
+		models.UserForum{},
+		models.Moderator{},
+		models.Thread{},
+		models.Reply{},
 	)
 
 	if err != nil {

@@ -15,7 +15,7 @@ type User struct {
 	ProfileImage *string        `json:"profile_image" gorm:"type:varchar(255)"`
 	NIM          *string        `json:"nim,omitempty" gorm:"unique;type:varchar(255)"`
 	Status       *string        `json:"status" gorm:"type:ENUM('Active', 'Inactive');default:'Active'"`
-	Prodi        string         `json:"prodi" gorm:"type:varchar(255)"`
+	Prodi        *string        `json:"prodi" gorm:"type:varchar(255)"`
 	CreatedAt    time.Time      `json:"created_at"`
 	UpdatedAt    time.Time      `json:"updated_at"`
 	DeletedAt    gorm.DeletedAt `json:"-" gorm:"index"`

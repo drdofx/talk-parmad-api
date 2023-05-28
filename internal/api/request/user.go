@@ -7,7 +7,6 @@ type ReqSaveUser struct {
 }
 
 type ReqLoginUser struct {
-	NIM      string `json:"nim" validate:"numeric"`
-	Email    string `json:"email" validate:"email"`
+	User     string `json:"user" validate:"required"` // email or nim
 	Password string `json:"password" validate:"required"`
 }

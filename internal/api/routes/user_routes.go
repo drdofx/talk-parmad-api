@@ -6,7 +6,7 @@ import (
 )
 
 type UserRoutes interface {
-	SetupUserRoutes(router *gin.RouterGroup)
+	SetupAuthRoutes(router *gin.RouterGroup)
 }
 
 type userRoutes struct {
@@ -17,6 +17,7 @@ func NewUserRoutes(controller controller.UserController) UserRoutes {
 	return &userRoutes{controller}
 }
 
-func (r *userRoutes) SetupUserRoutes(router *gin.RouterGroup) {
-	router.POST("/users", r.controller.CreateUser)
+func (r *userRoutes) SetupAuthRoutes(router *gin.RouterGroup) {
+	router.POST("/login", r.controller.LoginUser)
+	router.POST("/register", r.controller.CreateUser)
 }

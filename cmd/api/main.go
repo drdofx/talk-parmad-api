@@ -38,7 +38,7 @@ func startServer(router *gin.Engine, userRoutes routes.UserRoutes) {
 	fmt.Println("Starting server...")
 
 	v1 := router.Group(constants.API_PATH)
-	userRoutes.SetupUserRoutes(v1)
+	userRoutes.SetupAuthRoutes(v1)
 
 	router.Run()
 }
