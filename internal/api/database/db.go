@@ -5,9 +5,14 @@ import (
 
 	"github.com/drdofx/talk-parmad/internal/api/lib"
 	"github.com/drdofx/talk-parmad/internal/api/models"
+	"go.uber.org/fx"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+)
+
+var Module = fx.Module("database",
+	fx.Provide(NewDatabase),
 )
 
 // Database is a struct that contains the database connection

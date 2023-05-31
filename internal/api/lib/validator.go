@@ -2,7 +2,7 @@ package lib
 
 import "github.com/go-playground/validator/v10"
 
-func ValidatorInit() *validator.Validate {
+func NewValidator() *validator.Validate {
 	validate := validator.New()
 	validate.RegisterAlias("req-email", "required,email")
 	validate.RegisterAlias("req-alphanum", "required,alphanum")

@@ -1,9 +1,9 @@
 package main
 
 import (
+	"context"
 	"fmt"
 
-	"github.com/drdofx/talk-parmad/internal/api/constants"
 	"github.com/drdofx/talk-parmad/internal/api/controller"
 	"github.com/drdofx/talk-parmad/internal/api/database"
 	"github.com/drdofx/talk-parmad/internal/api/lib"
@@ -16,16 +16,12 @@ import (
 
 func main() {
 	app := fx.New(
-		fx.Provide(
-			lib.NewEnv,
-			lib.ValidatorInit,
-			database.NewDatabase,
-			repository.NewUserRepository,
-			services.NewUserService,
-			controller.NewUserController,
-			routes.NewUserRoutes,
-			gin.Default,
-		),
+		lib.Module,
+		database.Module,
+		repository.Module,
+		services.Module,
+		controller.Module,
+		routes.Module,
 		fx.Invoke(
 			startServer,
 		),
@@ -34,11 +30,32 @@ func main() {
 	app.Run()
 }
 
-func startServer(router *gin.Engine, userRoutes routes.UserRoutes) {
-	fmt.Println("Starting server...")
+func startServer(handler *lib.RequestHandler, routes routes.Routes, env *lib.Env, lifecycle fx.Lifecycle) {
+	port := env.Port
 
-	v1 := router.Group(constants.API_PATH)
-	userRoutes.SetupAuthRoutes(v1)
+	lifecycle.Append(fx.Hook{
+		OnStart: func(context.Context) error {
+			fmt.Println("Starting server on port", port)
 
-	router.Run()
+			go func() {
+				handler.Gin.GET("/ping", func(c *gin.Context) {
+					c.JSON(200, "pong")
+				})
+
+				routes.Setup()
+
+				err := handler.Gin.Run(fmt.Sprintf(":%s", port))
+				if err != nil {
+					fmt.Println("Error starting server")
+					panic(err)
+				}
+			}()
+			return nil
+		},
+		OnStop: func(context.Context) error {
+			fmt.Println("Stopping server")
+			return nil
+		},
+	})
+
 }

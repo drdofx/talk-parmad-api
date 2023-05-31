@@ -11,6 +11,7 @@ type Env struct {
 	DBHost     string `mapstructure:"DB_HOST"`
 	DBPort     string `mapstructure:"DB_PORT"`
 	DBName     string `mapstructure:"DB_NAME"`
+	Port       string `mapstructure:"PORT"`
 }
 
 // NewEnv returns a new Env struct

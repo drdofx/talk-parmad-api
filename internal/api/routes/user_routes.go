@@ -1,23 +1,24 @@
 package routes
 
 import (
+	"github.com/drdofx/talk-parmad/internal/api/constants"
 	"github.com/drdofx/talk-parmad/internal/api/controller"
-	"github.com/gin-gonic/gin"
+	"github.com/drdofx/talk-parmad/internal/api/lib"
 )
-
-type UserRoutes interface {
-	SetupAuthRoutes(router *gin.RouterGroup)
-}
 
 type userRoutes struct {
 	controller controller.UserController
+	handler    *lib.RequestHandler
 }
 
-func NewUserRoutes(controller controller.UserController) UserRoutes {
-	return &userRoutes{controller}
+func NewUserRoutes(controller controller.UserController, handler *lib.RequestHandler) Route {
+	return &userRoutes{controller, handler}
 }
 
-func (r *userRoutes) SetupAuthRoutes(router *gin.RouterGroup) {
-	router.POST("/login", r.controller.LoginUser)
-	router.POST("/register", r.controller.CreateUser)
+func (r *userRoutes) Setup() {
+	auth := r.handler.Gin.Group(constants.API_PATH)
+	{
+		auth.POST("/login", r.controller.LoginUser)
+		auth.POST("/register", r.controller.CreateUser)
+	}
 }

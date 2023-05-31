@@ -1,6 +1,7 @@
 package lib
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
@@ -45,4 +46,12 @@ func GenerateJWT(user *models.User) string {
 
 }
 
-// func ValidateJWT(token string)
+func ValidateJWT(token string) (*jwt.Token, error) {
+	return jwt.ParseWithClaims(token, &JWT{}, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+
+		return []byte(viper.GetString("JWT_SECRET")), nil
+	})
+}

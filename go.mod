@@ -4,6 +4,7 @@ go 1.20
 
 require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/gin-contrib/cors v1.4.0
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
 	github.com/sirupsen/logrus v1.9.2
 	github.com/spf13/viper v1.15.0
@@ -39,7 +40,7 @@ require (
 	go.uber.org/multierr v1.8.0 // indirect
 	go.uber.org/zap v1.23.0 // indirect
 	golang.org/x/arch v0.0.0-20210923205945-b76863e36670 // indirect
-	golang.org/x/crypto v0.5.0 // indirect
+	golang.org/x/crypto v0.5.0
 	golang.org/x/net v0.7.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 )
