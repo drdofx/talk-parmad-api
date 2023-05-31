@@ -5,6 +5,7 @@ import "go.uber.org/fx"
 var Module = fx.Module("routes",
 	fx.Provide(
 		NewUserRoutes,
+		NewForumRoutes,
 		NewRoutes,
 	),
 )
@@ -25,8 +26,9 @@ func (r Routes) Setup() {
 }
 
 // NewRoutes creates a new Routes instance with the provided routes
-func NewRoutes(userRoutes Route) Routes {
+func NewRoutes(userRoutes UserRoutes, forumRoutes ForumRoutes) Routes {
 	return Routes{
 		userRoutes,
+		forumRoutes,
 	}
 }

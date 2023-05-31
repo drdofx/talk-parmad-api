@@ -24,7 +24,7 @@ func NewForumService(repo repository.ForumRepository) ForumService {
 }
 
 func (s *forumService) Create(req *request.ReqSaveForum) (*models.Forum, error) {
-	// Check if user is mahaasiswa
+	// Check if user is User
 
 	// Check if forum exists with same name
 

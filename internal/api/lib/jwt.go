@@ -36,7 +36,7 @@ func GenerateJWT(user *models.User) string {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	signedToken, err := token.SignedString([]byte(viper.GetString("SECRET_KEY")))
+	signedToken, err := token.SignedString([]byte(viper.GetString("JWT_SECRET")))
 
 	if err != nil {
 		return ""
@@ -47,6 +47,10 @@ func GenerateJWT(user *models.User) string {
 }
 
 func ValidateJWT(token string) (*jwt.Token, error) {
+	if token[:7] == "Bearer " {
+		token = token[7:]
+	}
+
 	return jwt.ParseWithClaims(token, &JWT{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])

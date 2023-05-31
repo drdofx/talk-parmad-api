@@ -6,12 +6,16 @@ import (
 	"github.com/drdofx/talk-parmad/internal/api/lib"
 )
 
+type UserRoutes interface {
+	Route
+}
+
 type userRoutes struct {
 	controller controller.UserController
 	handler    *lib.RequestHandler
 }
 
-func NewUserRoutes(controller controller.UserController, handler *lib.RequestHandler) Route {
+func NewUserRoutes(controller controller.UserController, handler *lib.RequestHandler) UserRoutes {
 	return &userRoutes{controller, handler}
 }
 

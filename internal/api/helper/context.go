@@ -5,7 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func GetUserData(c *gin.Context) *lib.UserData {
+func GetUserData(c *gin.Context) lib.UserData {
 	user := c.MustGet("USER_DATA")
-	return user.(*lib.UserData)
+	return user.(lib.UserData)
 }
