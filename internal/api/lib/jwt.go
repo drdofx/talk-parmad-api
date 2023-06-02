@@ -17,6 +17,7 @@ type JWT struct {
 
 type UserData struct {
 	UserID uint
+	Name   string
 	NIM    string
 	Role   string
 }
@@ -30,6 +31,7 @@ func GenerateJWT(user *models.User) string {
 		},
 		Data: UserData{
 			UserID: user.ID,
+			Name:   user.Name,
 			NIM:    *user.NIM,
 			Role:   user.Role,
 		},

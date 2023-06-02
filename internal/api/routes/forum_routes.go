@@ -24,5 +24,8 @@ func (r *forumRoutes) Setup() {
 	auth := r.handler.Gin.Group(constants.API_PATH + "/forum").Use(middleware.AuthorizeJWT())
 	{
 		auth.POST("/create", r.controller.CreateForum)
+		auth.POST("/join", r.controller.JoinForum)
+		auth.PUT("/edit", r.controller.EditForum)
+		auth.DELETE("/delete", r.controller.DeleteForum)
 	}
 }

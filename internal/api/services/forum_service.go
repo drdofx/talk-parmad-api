@@ -1,35 +1,175 @@
 package services
 
 import (
+	"fmt"
+
+	"github.com/drdofx/talk-parmad/internal/api/helper"
+	"github.com/drdofx/talk-parmad/internal/api/lib"
 	"github.com/drdofx/talk-parmad/internal/api/models"
 	"github.com/drdofx/talk-parmad/internal/api/repository"
 	"github.com/drdofx/talk-parmad/internal/api/request"
 )
 
 type ForumService interface {
-	Create(req *request.ReqSaveForum) (*models.Forum, error)
+	CreateForum(req *request.ReqSaveForum, user *lib.UserData) (*models.Forum, error)
+	JoinForum(req *request.ReqJoinForum, user *lib.UserData) error
+	CheckModeratorForum(req *request.ReqCheckModeratorForum) (bool, error)
+	EditForum(req *request.ReqEditForum) (*models.Forum, error)
+	DeleteForum(req *request.ReqDeleteForum) error
 	// ReadById(id uint) (*models.Forum, error)
-	// JoinForum(req *request.ReqJoinForum) (*models.Forum, error)
 	// ExitForum(req *request.ReqExitForum) (*models.Forum, error)
-	// EditForum(req *request.ReqEditForum) (*models.Forum, error)
-	// DeleteForum(req *request.ReqDeleteForum) (*models.Forum, error)
 }
 
 type forumService struct {
-	repository repository.ForumRepository
+	repository      repository.ForumRepository
+	transactionRepo repository.TransactionRepository
 }
 
-func NewForumService(repo repository.ForumRepository) ForumService {
-	return &forumService{repo}
+func NewForumService(repo repository.ForumRepository, transactionRepo repository.TransactionRepository) ForumService {
+	return &forumService{repo, transactionRepo}
 }
 
-func (s *forumService) Create(req *request.ReqSaveForum) (*models.Forum, error) {
-	// Check if user is User
+func (s *forumService) CreateForum(req *request.ReqSaveForum, user *lib.UserData) (*models.Forum, error) {
+	// Begin transaction
+	tx := s.transactionRepo.BeginTransaction()
 
-	// Check if forum exists with same name
+	// Defer the rollback in case of an error
+	defer func() {
+		if r := recover(); r != nil {
+			s.transactionRepo.RollbackTransaction(tx)
+		}
+	}()
 
-	// Create forum and assgin user as moderator (head)
+	// Check if user is authorized to create a forum
+	if user.Role != "User" {
+		return nil, fmt.Errorf(helper.RoleNotAuthorized)
+	}
 
-	// finish
-	return nil, nil
+	// Check if forum with the same name already exists
+	existingForum, _ := s.repository.GetForumByName(req.ForumName)
+	if existingForum != nil {
+		return nil, fmt.Errorf(helper.ForumExists)
+	}
+
+	createdForum, err := s.repository.CreateForum(req, user)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create the moderator (head) for the forum
+	_, err = s.repository.CreateModeratorHead(createdForum, user)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create the user-forum relation
+	_, err = s.repository.CreateUserForum(createdForum, user)
+	if err != nil {
+		return nil, err
+	}
+
+	// Commit the transaction
+	s.transactionRepo.CommitTransaction(tx)
+
+	return createdForum, nil
+}
+
+func (s *forumService) JoinForum(req *request.ReqJoinForum, user *lib.UserData) error {
+	// Begin transaction
+	tx := s.transactionRepo.BeginTransaction()
+
+	// Defer the rollback in case of an error
+	defer func() {
+		if r := recover(); r != nil {
+			s.transactionRepo.RollbackTransaction(tx)
+		}
+	}()
+
+	// Get the forum by id
+	forum, err := s.repository.GetForumById(req.ForumID)
+	if err != nil {
+		return err
+	}
+
+	// Check if user is already a member of the forum
+	userForum, _ := s.repository.GetUserForumByID(forum.ID, user.UserID)
+	if userForum != nil {
+		return fmt.Errorf(helper.UserAlreadyMember)
+	}
+
+	// Create the user-forum relation
+	_, err = s.repository.CreateUserForum(forum, user)
+
+	// Commit the transaction
+	s.transactionRepo.CommitTransaction(tx)
+
+	return err
+}
+
+func (s *forumService) CheckModeratorForum(req *request.ReqCheckModeratorForum) (bool, error) {
+	// Get the forum by id
+	forum, err := s.repository.GetForumById(req.ForumID)
+	if err != nil {
+		return false, err
+	}
+
+	// Check if user is a moderator of the forum
+	moderator, _ := s.repository.GetModeratorByID(forum.ID, req.UserID)
+	if moderator == nil {
+		return false, fmt.Errorf(helper.UserNotModerator)
+	}
+
+	return true, nil
+}
+
+func (s *forumService) EditForum(req *request.ReqEditForum) (*models.Forum, error) {
+	// Begin transaction
+	tx := s.transactionRepo.BeginTransaction()
+
+	// Defer the rollback in case of an error
+	defer func() {
+		if r := recover(); r != nil {
+			s.transactionRepo.RollbackTransaction(tx)
+		}
+	}()
+
+	// Get the forum by id
+	forum, err := s.repository.GetForumById(req.ForumID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Update the forum
+	updatedForum, err := s.repository.UpdateForum(forum, req)
+
+	// Commit the transaction
+	s.transactionRepo.CommitTransaction(tx)
+
+	return updatedForum, err
+}
+
+func (s *forumService) DeleteForum(req *request.ReqDeleteForum) error {
+	// Begin transaction
+	tx := s.transactionRepo.BeginTransaction()
+
+	// Defer the rollback in case of an error
+	defer func() {
+		if r := recover(); r != nil {
+			s.transactionRepo.RollbackTransaction(tx)
+		}
+	}()
+
+	// Get the forum by id
+	forum, err := s.repository.GetForumById(req.ForumID)
+	if err != nil {
+		return err
+	}
+
+	// Delete the forum
+	err = s.repository.DeleteForum(forum)
+
+	// Commit the transaction
+	s.transactionRepo.CommitTransaction(tx)
+
+	return err
 }
