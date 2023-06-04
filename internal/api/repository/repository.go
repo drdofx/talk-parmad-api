@@ -10,6 +10,7 @@ var Module = fx.Module("repository",
 	fx.Provide(
 		NewUserRepository,
 		NewForumRepository,
+		NewThreadRepository,
 		NewGormTransactionRepository,
 	),
 )

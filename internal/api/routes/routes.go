@@ -6,6 +6,7 @@ var Module = fx.Module("routes",
 	fx.Provide(
 		NewUserRoutes,
 		NewForumRoutes,
+		NewThreadRoutes,
 		NewRoutes,
 	),
 )
@@ -26,9 +27,14 @@ func (r Routes) Setup() {
 }
 
 // NewRoutes creates a new Routes instance with the provided routes
-func NewRoutes(userRoutes UserRoutes, forumRoutes ForumRoutes) Routes {
+func NewRoutes(
+	userRoutes UserRoutes,
+	forumRoutes ForumRoutes,
+	threadRoutes ThreadRoutes,
+) Routes {
 	return Routes{
 		userRoutes,
 		forumRoutes,
+		threadRoutes,
 	}
 }

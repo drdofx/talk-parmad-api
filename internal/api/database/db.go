@@ -80,6 +80,8 @@ func (d *Database) migrateDB() error {
 		models.Moderator{},
 		models.Thread{},
 		models.Reply{},
+		models.ThreadVote{},
+		models.ReplyVote{},
 	)
 
 	if err != nil {
