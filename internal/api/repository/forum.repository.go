@@ -5,6 +5,7 @@ import (
 	"github.com/drdofx/talk-parmad/internal/api/lib"
 	"github.com/drdofx/talk-parmad/internal/api/models"
 	"github.com/drdofx/talk-parmad/internal/api/request"
+	"github.com/drdofx/talk-parmad/internal/api/response"
 )
 
 type ForumRepository interface {
@@ -15,6 +16,9 @@ type ForumRepository interface {
 	CreateForum(req *request.ReqSaveForum, user *lib.UserData) (*models.Forum, error)
 	CreateModeratorHead(forum *models.Forum, user *lib.UserData) (*models.Moderator, error)
 	CreateUserForum(forum *models.Forum, user *lib.UserData) (*models.UserForum, error)
+	ListUserForum(user *lib.UserData) ([]models.Forum, error)
+	DetailForum(forumID uint) (*response.ResDetailForum, error)
+	ListThreadForumHome(userID uint) (*[]response.ResThreadForumHome, error)
 	UpdateForum(forum *models.Forum, req *request.ReqEditForum) (*models.Forum, error)
 	DeleteForum(forum *models.Forum) error
 }
@@ -113,6 +117,105 @@ func (r *forumRepository) CreateUserForum(forum *models.Forum, user *lib.UserDat
 	}
 
 	return userForum, nil
+}
+
+func (r *forumRepository) ListUserForum(user *lib.UserData) ([]models.Forum, error) {
+	var forums []models.Forum
+	err := r.db.DB.
+		Table("user_forums as uf").
+		Select("f.*").
+		Joins("inner join forums as f on f.id = uf.forum_id").
+		Where("uf.user_id = ?", user.UserID).
+		Scan(&forums).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return forums, nil
+}
+
+func (r *forumRepository) DetailForum(forumID uint) (*response.ResDetailForum, error) {
+	var res response.ResDetailForum
+
+	query := `
+		SELECT f.*, t.*
+		FROM forums AS f
+		LEFT JOIN threads AS t ON t.forum_id = f.id
+		WHERE f.id = ?
+		GROUP BY f.id, t.id`
+
+	rows, err := r.db.DB.Raw(query, forumID).Rows()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	// Scan forum data
+	if rows.Next() {
+		err = r.db.DB.ScanRows(rows, &res.ForumData)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Scan thread data
+	for rows.Next() {
+		var thread models.Thread
+		err = r.db.DB.ScanRows(rows, &thread)
+		if err != nil {
+			return nil, err
+		}
+		res.ThreadData = append(res.ThreadData, thread)
+	}
+
+	// Calculate total threads count
+	res.TotalThreads = len(res.ThreadData)
+
+	// Calculate number of members
+	query = `
+		SELECT COUNT(uf.user_id) AS number_of_members
+		FROM user_forums AS uf
+		WHERE uf.forum_id = ?
+	`
+
+	err = r.db.DB.Raw(query, forumID).Scan(&res.NumberOfMembers).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+func (r *forumRepository) ListThreadForumHome(userID uint) (*[]response.ResThreadForumHome, error) {
+	var res []response.ResThreadForumHome
+
+	query := `
+		SELECT uf.user_id, f.forum_name, f.forum_image, f.id AS forum_id, t.id AS thread_id, t.title, t.text
+		FROM user_forums AS uf
+		INNER JOIN forums AS f ON f.id = uf.forum_id
+		INNER JOIN threads AS t ON t.forum_id = f.id
+		WHERE uf.user_id = ?
+		ORDER BY t.created_at DESC
+	`
+
+	rows, err := r.db.DB.Raw(query, userID).Rows()
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	// loop through all rows
+	for rows.Next() {
+		// Scan the row data into variables
+		err = r.db.DB.ScanRows(rows, &res)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &res, nil
 }
 
 func (r *forumRepository) UpdateForum(forum *models.Forum, req *request.ReqEditForum) (*models.Forum, error) {

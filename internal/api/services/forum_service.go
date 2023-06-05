@@ -8,6 +8,7 @@ import (
 	"github.com/drdofx/talk-parmad/internal/api/models"
 	"github.com/drdofx/talk-parmad/internal/api/repository"
 	"github.com/drdofx/talk-parmad/internal/api/request"
+	"github.com/drdofx/talk-parmad/internal/api/response"
 )
 
 type ForumService interface {
@@ -16,6 +17,9 @@ type ForumService interface {
 	CheckModeratorForum(req *request.ReqCheckModeratorForum) (bool, error)
 	EditForum(req *request.ReqEditForum) (*models.Forum, error)
 	DeleteForum(req *request.ReqDeleteForum) error
+	ListUserForum(user *lib.UserData) ([]models.Forum, error)
+	ListThreadForumHome(user *lib.UserData) (*[]response.ResThreadForumHome, error)
+	DetailForum(req *request.ReqDetailForum) (*response.ResDetailForum, error)
 	// ReadById(id uint) (*models.Forum, error)
 	// ExitForum(req *request.ReqExitForum) (*models.Forum, error)
 }
@@ -120,6 +124,37 @@ func (s *forumService) CheckModeratorForum(req *request.ReqCheckModeratorForum) 
 	}
 
 	return true, nil
+}
+
+func (s *forumService) ListUserForum(user *lib.UserData) ([]models.Forum, error) {
+	// Get the list of forums
+	forums, err := s.repository.ListUserForum(user)
+	if err != nil {
+		return nil, err
+	}
+
+	return forums, nil
+}
+
+func (s *forumService) DetailForum(req *request.ReqDetailForum) (*response.ResDetailForum, error) {
+	// Get the forum detail, including the list of threads
+	forum, err := s.repository.DetailForum(req.ForumID)
+	if err != nil {
+		return nil, err
+	}
+
+	return forum, nil
+
+}
+
+func (s *forumService) ListThreadForumHome(user *lib.UserData) (*[]response.ResThreadForumHome, error) {
+	// Get the list of threads
+	threads, err := s.repository.ListThreadForumHome(user.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	return threads, nil
 }
 
 func (s *forumService) EditForum(req *request.ReqEditForum) (*models.Forum, error) {

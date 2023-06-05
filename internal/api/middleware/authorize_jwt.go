@@ -12,7 +12,9 @@ func AuthorizeJWT() gin.HandlerFunc {
 		auth := c.GetHeader("Authorization")
 		if auth == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"status":  401,
 				"message": "Unauthorized",
+				"data":    nil,
 			})
 			return
 		}
@@ -21,7 +23,9 @@ func AuthorizeJWT() gin.HandlerFunc {
 
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"status":  401,
 				"message": "Unauthorized",
+				"data":    nil,
 			})
 			return
 		}

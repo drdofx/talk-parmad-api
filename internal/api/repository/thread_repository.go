@@ -11,6 +11,7 @@ type ThreadRepository interface {
 	CreateThread(req *request.ReqSaveThread, forumID uint, userID uint) (*models.Thread, error)
 	CreateOrUpdateThreadVote(thread *models.Thread, req *request.ReqVoteThread, userID uint) (*models.ThreadVote, error)
 	UpdateThread(thread *models.Thread, req *request.ReqEditThread) (*models.Thread, error)
+	DetailThread(threadID uint) (*models.Thread, error)
 }
 
 type threadRepository struct {
@@ -78,4 +79,8 @@ func (r *threadRepository) UpdateThread(thread *models.Thread, req *request.ReqE
 	}
 
 	return thread, nil
+}
+
+func (r *threadRepository) DetailThread(threadID uint) (*models.Thread, error) {
+	return nil, nil
 }

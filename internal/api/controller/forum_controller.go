@@ -14,8 +14,11 @@ import (
 type ForumController interface {
 	CreateForum(c *gin.Context)
 	JoinForum(c *gin.Context)
-	EditForum(c *gin.Context)
-	DeleteForum(c *gin.Context)
+	ListUserForum(c *gin.Context)
+	DetailForum(c *gin.Context)
+	ListThreadForumHome(c *gin.Context)
+	EditForum(c *gin.Context)   // only moderator
+	DeleteForum(c *gin.Context) // only moderator
 }
 
 type forumController struct {
@@ -81,6 +84,62 @@ func (ctr *forumController) JoinForum(c *gin.Context) {
 	}
 
 	helper.HandleSuccessResponse(c, nil)
+}
+
+func (ctr *forumController) ListUserForum(c *gin.Context) {
+	user := helper.GetUserData(c)
+
+	res, err := ctr.services.ListUserForum(&user)
+
+	if err != nil {
+		lib.CommonLogger().Error(err)
+		helper.HandleErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	helper.HandleSuccessResponse(c, res)
+}
+
+func (ctr *forumController) DetailForum(c *gin.Context) {
+	var req request.ReqDetailForum
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		lib.CommonLogger().Error(err)
+		helper.HandleErrorResponse(c, http.StatusBadRequest, "Bad request")
+		return
+	}
+
+	if err := ctr.validate.Struct(&req); err != nil {
+		lib.CommonLogger().Error(err)
+		helper.HandleErrorResponse(c, http.StatusBadRequest, "Bad input")
+		return
+	}
+
+	// user := helper.GetUserData(c)
+
+	res, err := ctr.services.DetailForum(&req)
+
+	if err != nil {
+		lib.CommonLogger().Error(err)
+		helper.HandleErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	helper.HandleSuccessResponse(c, res)
+}
+
+func (ctr *forumController) ListThreadForumHome(c *gin.Context) {
+	user := helper.GetUserData(c)
+
+	res, err := ctr.services.ListThreadForumHome(&user)
+
+	if err != nil {
+		lib.CommonLogger().Error(err)
+		helper.HandleErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	helper.HandleSuccessResponse(c, res)
 }
 
 // MODERATOR ONLY CONTROLLERS
