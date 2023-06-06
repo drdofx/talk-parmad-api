@@ -21,10 +21,19 @@ func NewThreadRoutes(controller controller.ThreadController, handler *lib.Reques
 }
 
 func (r *threadRoutes) Setup() {
-	auth := r.handler.Gin.Group(constants.API_PATH + "/thread").Use(middleware.AuthorizeJWT())
+	auth := r.handler.Gin.Group(constants.API_PATH + "/thread")
+	auth.Use(middleware.AuthorizeJWT())
 	{
 		auth.POST("/create", r.controller.CreateThread)
 		auth.POST("/vote", r.controller.VoteThread)
 		auth.PUT("/edit", r.controller.EditThread)
+		auth.GET("/detail", r.controller.DetailThread)
+
+		reply := auth.Group("/reply")
+		{
+			reply.POST("/create", r.controller.CreateReply)
+			reply.POST("/vote", r.controller.VoteReply)
+			reply.PUT("/edit", r.controller.EditReply)
+		}
 	}
 }

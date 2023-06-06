@@ -9,12 +9,17 @@ import (
 	"github.com/drdofx/talk-parmad/internal/api/models"
 	"github.com/drdofx/talk-parmad/internal/api/repository"
 	"github.com/drdofx/talk-parmad/internal/api/request"
+	"github.com/drdofx/talk-parmad/internal/api/response"
 )
 
 type ThreadService interface {
 	CreateThread(req *request.ReqSaveThread, user *lib.UserData) (*models.Thread, error)
 	VoteThread(req *request.ReqVoteThread, user *lib.UserData) (*models.ThreadVote, error)
 	EditThread(req *request.ReqEditThread, user *lib.UserData) (*models.Thread, error)
+	DetailThread(req *request.ReqDetailThread) (*response.ResDetailThread, error)
+	CreateReply(req *request.ReqSaveReply, user *lib.UserData) (*models.Reply, error)
+	VoteReply(req *request.ReqVoteReply, user *lib.UserData) (*models.ReplyVote, error)
+	EditReply(req *request.ReqEditReply, user *lib.UserData) (*models.Reply, error)
 }
 
 type threadService struct {
@@ -130,4 +135,122 @@ func (s *threadService) EditThread(req *request.ReqEditThread, user *lib.UserDat
 	}
 
 	return updatedThread, nil
+}
+
+func (s *threadService) DetailThread(req *request.ReqDetailThread) (*response.ResDetailThread, error) {
+	// Get the thread data, including its reply
+	threadIdInt, _ := strconv.Atoi(req.ThreadID)
+	thread, err := s.repository.DetailThread(uint(threadIdInt))
+	if err != nil {
+		return nil, err
+	}
+
+	return thread, nil
+}
+
+func (s *threadService) CreateReply(req *request.ReqSaveReply, user *lib.UserData) (*models.Reply, error) {
+	tx := s.transactionRepo.BeginTransaction()
+	defer func() {
+		if r := recover(); r != nil {
+			s.transactionRepo.RollbackTransaction(tx)
+		}
+	}()
+
+	// Get the thread by id
+	threadIdInt, _ := strconv.Atoi(req.ThreadID)
+	thread, err := s.repository.GetThreadByID(uint(threadIdInt))
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if user a member of the requested forum
+	userForum, _ := s.forumRepo.GetUserForumByID(thread.ForumID, user.UserID)
+	if userForum == nil {
+		return nil, fmt.Errorf(helper.UserNotMember)
+	}
+
+	// Create the reply for the thread
+	createdReply, err := s.repository.CreateReply(req, thread.ID, user.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := s.transactionRepo.CommitTransaction(tx); err != nil {
+		return nil, err
+	}
+
+	return createdReply, nil
+}
+
+func (s *threadService) VoteReply(req *request.ReqVoteReply, user *lib.UserData) (*models.ReplyVote, error) {
+	tx := s.transactionRepo.BeginTransaction()
+	defer func() {
+		if r := recover(); r != nil {
+			s.transactionRepo.RollbackTransaction(tx)
+		}
+	}()
+
+	// Get reply by id
+	replyIdInt, _ := strconv.Atoi(req.ReplyID)
+	reply, err := s.repository.GetReplyByID(uint(replyIdInt))
+	if err != nil {
+		return nil, err
+	}
+
+	// Get thread by id
+	thread, err := s.repository.GetThreadByID(reply.ThreadID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if user a member of the requested forum
+	userForum, _ := s.forumRepo.GetUserForumByID(thread.ForumID, user.UserID)
+	if userForum == nil {
+		return nil, fmt.Errorf(helper.UserNotMember)
+	}
+
+	// Update the reply data vote
+	replyVote, err := s.repository.CreateOrUpdateReplyVote(reply, req, user.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := s.transactionRepo.CommitTransaction(tx); err != nil {
+		return nil, err
+	}
+
+	return replyVote, nil
+}
+
+func (s *threadService) EditReply(req *request.ReqEditReply, user *lib.UserData) (*models.Reply, error) {
+	tx := s.transactionRepo.BeginTransaction()
+	defer func() {
+		if r := recover(); r != nil {
+			s.transactionRepo.RollbackTransaction(tx)
+		}
+	}()
+
+	// Get reply by id
+	replyIdInt, _ := strconv.Atoi(req.ReplyID)
+	reply, err := s.repository.GetReplyByID(uint(replyIdInt))
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if user created the reply
+	if reply.CreatedBy != user.UserID {
+		return nil, fmt.Errorf(helper.UserNotCreatedReply)
+	}
+
+	// Update the reply data
+	updatedReply, err := s.repository.UpdateReply(reply, req)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := s.transactionRepo.CommitTransaction(tx); err != nil {
+		return nil, err
+	}
+
+	return updatedReply, nil
 }

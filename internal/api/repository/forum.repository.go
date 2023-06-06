@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"errors"
+
 	"github.com/drdofx/talk-parmad/internal/api/database"
 	"github.com/drdofx/talk-parmad/internal/api/lib"
 	"github.com/drdofx/talk-parmad/internal/api/models"
@@ -152,11 +154,13 @@ func (r *forumRepository) DetailForum(forumID uint) (*response.ResDetailForum, e
 	defer rows.Close()
 
 	// Scan forum data
-	if rows.Next() {
-		err = r.db.DB.ScanRows(rows, &res.ForumData)
-		if err != nil {
-			return nil, err
-		}
+	if !rows.Next() {
+		return nil, errors.New("forum not found")
+	}
+
+	err = r.db.DB.ScanRows(rows, &res.ForumData)
+	if err != nil {
+		return nil, err
 	}
 
 	// Scan thread data

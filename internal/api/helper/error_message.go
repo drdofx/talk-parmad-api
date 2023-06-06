@@ -10,4 +10,5 @@ const (
 	UserNotModerator     = "user is not a moderator of the forum"
 	UserNotMember        = "user is not a member of the forum"
 	UserNotCreatedThread = "user did not create the thread"
+	UserNotCreatedReply  = "user did not create the reply"
 )
