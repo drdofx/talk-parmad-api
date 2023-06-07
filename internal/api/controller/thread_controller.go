@@ -3,6 +3,7 @@ package controller
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/drdofx/talk-parmad/internal/api/helper"
 	"github.com/drdofx/talk-parmad/internal/api/lib"
@@ -20,8 +21,8 @@ type ThreadController interface {
 	CreateReply(c *gin.Context)
 	VoteReply(c *gin.Context)
 	EditReply(c *gin.Context)
-	// GetThreads(c *gin.Context)
-	// UpdateThread(c *gin.Context)
+	DeleteThread(c *gin.Context) // only moderator
+	DeleteReply(c *gin.Context)  // only moderator
 }
 
 type threadController struct {
@@ -227,4 +228,91 @@ func (ctr *threadController) EditReply(c *gin.Context) {
 	}
 
 	helper.HandleSuccessResponse(c, res)
+}
+
+// MODERATOR ONLY CONTROLLERS
+func (ctr *threadController) DeleteThread(c *gin.Context) {
+	var req request.ReqDeleteThread
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		lib.CommonLogger().Error(err)
+		helper.HandleErrorResponse(c, http.StatusBadRequest, "Bad request")
+		return
+	}
+
+	if err := ctr.validate.Struct(&req); err != nil {
+		lib.CommonLogger().Error(err)
+		helper.HandleErrorResponse(c, http.StatusBadRequest, "Bad input")
+		return
+	}
+
+	user := helper.GetUserData(c)
+
+	threadIdInt, _ := strconv.Atoi(req.ThreadID)
+	thread, err := ctr.services.GetThreadByID(uint(threadIdInt))
+	if err != nil {
+		lib.CommonLogger().Error(err)
+		helper.HandleErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	_, err = ctr.services.CheckModeratorForumFromThread(thread, &user)
+	if err != nil {
+		lib.CommonLogger().Error(err)
+		helper.HandleErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	err = ctr.services.DeleteThread(thread)
+
+	if err != nil {
+		lib.CommonLogger().Error(err)
+		helper.HandleErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	helper.HandleSuccessResponse(c, nil)
+}
+
+func (ctr *threadController) DeleteReply(c *gin.Context) {
+	var req request.ReqDeleteReply
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		lib.CommonLogger().Error(err)
+		helper.HandleErrorResponse(c, http.StatusBadRequest, "Bad request")
+		return
+	}
+
+	if err := ctr.validate.Struct(&req); err != nil {
+		lib.CommonLogger().Error(err)
+		helper.HandleErrorResponse(c, http.StatusBadRequest, "Bad input")
+		return
+	}
+
+	user := helper.GetUserData(c)
+
+	replyIdInt, _ := strconv.Atoi(req.ReplyID)
+	thread, reply, err := ctr.services.GetThreadAndReplyByReplyID(uint(replyIdInt))
+	if err != nil {
+		lib.CommonLogger().Error(err)
+		helper.HandleErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	_, err = ctr.services.CheckModeratorForumFromThread(thread, &user)
+	if err != nil {
+		lib.CommonLogger().Error(err)
+		helper.HandleErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	err = ctr.services.DeleteReply(reply)
+
+	if err != nil {
+		lib.CommonLogger().Error(err)
+		helper.HandleErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	helper.HandleSuccessResponse(c, nil)
 }

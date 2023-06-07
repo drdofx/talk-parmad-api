@@ -28,12 +28,14 @@ func (r *threadRoutes) Setup() {
 		auth.POST("/vote", r.controller.VoteThread)
 		auth.PUT("/edit", r.controller.EditThread)
 		auth.GET("/detail", r.controller.DetailThread)
+		auth.DELETE("/delete", r.controller.DeleteThread)
 
 		reply := auth.Group("/reply")
 		{
 			reply.POST("/create", r.controller.CreateReply)
 			reply.POST("/vote", r.controller.VoteReply)
 			reply.PUT("/edit", r.controller.EditReply)
+			reply.DELETE("/delete", r.controller.DeleteReply)
 		}
 	}
 }

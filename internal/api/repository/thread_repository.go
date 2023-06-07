@@ -19,6 +19,8 @@ type ThreadRepository interface {
 	CreateReply(req *request.ReqSaveReply, threadID uint, userID uint) (*models.Reply, error)
 	CreateOrUpdateReplyVote(reply *models.Reply, req *request.ReqVoteReply, userID uint) (*models.ReplyVote, error)
 	UpdateReply(reply *models.Reply, req *request.ReqEditReply) (*models.Reply, error)
+	DeleteThread(thread *models.Thread) error
+	DeleteReply(reply *models.Reply) error
 }
 
 type threadRepository struct {
@@ -96,7 +98,8 @@ func (r *threadRepository) DetailThread(threadID uint) (*response.ResDetailThrea
 		FROM threads t
 		LEFT JOIN users u ON u.id = t.created_by
 		LEFT JOIN thread_votes tv ON tv.thread_id = t.id
-		WHERE t.id = ?
+		WHERE t.id = ? 
+		AND t.deleted_at IS NULL
 		GROUP BY t.id, u.name
 	`
 
@@ -123,11 +126,12 @@ func (r *threadRepository) DetailThread(threadID uint) (*response.ResDetailThrea
 
 	// Retrieve replies for the thread
 	repliesQuery := `
-		SELECT r.text, r.created_at, u2.name as created_by, SUM(CASE WHEN rv.vote = true THEN 1 ELSE 0 END) as total_upvotes, SUM(CASE WHEN rv.vote = false THEN 1 ELSE 0 END) as total_downvotes
+		SELECT r.id as id, r.text, r.created_at, u2.name as created_by, SUM(CASE WHEN rv.vote = true THEN 1 ELSE 0 END) as total_upvotes, SUM(CASE WHEN rv.vote = false THEN 1 ELSE 0 END) as total_downvotes
 		FROM replies r
 		LEFT JOIN users u2 ON u2.id = r.created_by
 		LEFT JOIN reply_votes rv ON rv.reply_id = r.id
 		WHERE r.thread_id = ?
+		AND r.deleted_at IS NULL
 		GROUP BY r.id, u2.name
 	`
 
@@ -141,7 +145,7 @@ func (r *threadRepository) DetailThread(threadID uint) (*response.ResDetailThrea
 	// Iterate over the replies and append them to the ResDetailThread struct
 	for repliesRows.Next() {
 		var reply response.ResReplyField
-		err := repliesRows.Scan(&reply.Text, &reply.CreatedAt, &reply.CreatedBy, &reply.TotalUpvotes, &reply.TotalDownvotes)
+		err := repliesRows.Scan(&reply.ID, &reply.Text, &reply.CreatedAt, &reply.CreatedBy, &reply.TotalUpvotes, &reply.TotalDownvotes)
 		if err != nil {
 			return nil, err
 		}
@@ -209,4 +213,24 @@ func (r *threadRepository) UpdateReply(reply *models.Reply, req *request.ReqEdit
 	}
 
 	return reply, nil
+}
+
+func (r *threadRepository) DeleteThread(thread *models.Thread) error {
+	err := r.db.DB.Delete(&thread).Error
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *threadRepository) DeleteReply(reply *models.Reply) error {
+	err := r.db.DB.Delete(&reply).Error
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

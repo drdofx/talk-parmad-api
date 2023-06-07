@@ -20,6 +20,11 @@ type ThreadService interface {
 	CreateReply(req *request.ReqSaveReply, user *lib.UserData) (*models.Reply, error)
 	VoteReply(req *request.ReqVoteReply, user *lib.UserData) (*models.ReplyVote, error)
 	EditReply(req *request.ReqEditReply, user *lib.UserData) (*models.Reply, error)
+	GetThreadByID(threadID uint) (*models.Thread, error)
+	CheckModeratorForumFromThread(thread *models.Thread, user *lib.UserData) (bool, error)
+	DeleteThread(thread *models.Thread) error
+	GetThreadAndReplyByReplyID(replyID uint) (*models.Thread, *models.Reply, error)
+	DeleteReply(reply *models.Reply) error
 }
 
 type threadService struct {
@@ -253,4 +258,77 @@ func (s *threadService) EditReply(req *request.ReqEditReply, user *lib.UserData)
 	}
 
 	return updatedReply, nil
+}
+
+func (s *threadService) GetThreadByID(threadID uint) (*models.Thread, error) {
+	thread, err := s.repository.GetThreadByID(threadID)
+	if err != nil {
+		return nil, err
+	}
+
+	return thread, nil
+}
+
+func (s *threadService) CheckModeratorForumFromThread(thread *models.Thread, user *lib.UserData) (bool, error) {
+	// Check if user a moderator of the requested forum
+	moderator, _ := s.forumRepo.GetModeratorByID(thread.ForumID, user.UserID)
+	if moderator == nil {
+		return false, fmt.Errorf(helper.UserNotModerator)
+	}
+
+	return true, nil
+}
+
+func (s *threadService) DeleteThread(thread *models.Thread) error {
+	// Begin transaction
+	tx := s.transactionRepo.BeginTransaction()
+
+	// Defer the rollback in case of an error
+	defer func() {
+		if r := recover(); r != nil {
+			s.transactionRepo.RollbackTransaction(tx)
+		}
+	}()
+
+	// Delete the thread
+	err := s.repository.DeleteThread(thread)
+
+	// Commit the transaction
+	s.transactionRepo.CommitTransaction(tx)
+
+	return err
+}
+
+func (s *threadService) GetThreadAndReplyByReplyID(replyID uint) (*models.Thread, *models.Reply, error) {
+	reply, err := s.repository.GetReplyByID(replyID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	thread, err := s.repository.GetThreadByID(reply.ThreadID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return thread, reply, nil
+}
+
+func (s *threadService) DeleteReply(reply *models.Reply) error {
+	// Begin transaction
+	tx := s.transactionRepo.BeginTransaction()
+
+	// Defer the rollback in case of an error
+	defer func() {
+		if r := recover(); r != nil {
+			s.transactionRepo.RollbackTransaction(tx)
+		}
+	}()
+
+	// Delete the reply
+	err := s.repository.DeleteReply(reply)
+
+	// Commit the transaction
+	s.transactionRepo.CommitTransaction(tx)
+
+	return err
 }

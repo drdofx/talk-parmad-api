@@ -17,6 +17,7 @@ type ResThreadField struct {
 }
 
 type ResReplyField struct {
+	ID             uint   `json:"id"`
 	Text           string `json:"text"`
 	CreatedBy      string `json:"created_by"`
 	CreatedAt      string `json:"created_at"`

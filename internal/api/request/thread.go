@@ -35,3 +35,11 @@ type ReqEditReply struct {
 type ReqDetailThread struct {
 	ThreadID string `json:"thread_id" validate:"req-numeric"`
 }
+
+type ReqDeleteThread struct {
+	ThreadID string `json:"thread_id" validate:"req-numeric"`
+}
+
+type ReqDeleteReply struct {
+	ReplyID string `json:"reply_id" validate:"req-numeric"`
+}

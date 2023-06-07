@@ -140,50 +140,67 @@ func (r *forumRepository) ListUserForum(user *lib.UserData) ([]models.Forum, err
 func (r *forumRepository) DetailForum(forumID uint) (*response.ResDetailForum, error) {
 	var res response.ResDetailForum
 
-	query := `
-		SELECT f.*, t.*
-		FROM forums AS f
-		LEFT JOIN threads AS t ON t.forum_id = f.id
-		WHERE f.id = ?
-		GROUP BY f.id, t.id`
+	forumQuery := `
+		SELECT *
+		FROM forums
+		WHERE id = ?
+		AND deleted_at IS NULL
+	`
 
-	rows, err := r.db.DB.Raw(query, forumID).Rows()
+	// Execute forum query
+	forumRows, err := r.db.DB.Raw(forumQuery, forumID).Rows()
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer forumRows.Close()
 
 	// Scan forum data
-	if !rows.Next() {
+	if !forumRows.Next() {
 		return nil, errors.New("forum not found")
 	}
 
-	err = r.db.DB.ScanRows(rows, &res.ForumData)
+	err = r.db.DB.ScanRows(forumRows, &res.ForumData)
 	if err != nil {
 		return nil, err
 	}
 
+	threadQuery := `
+		SELECT *
+		FROM threads
+		WHERE forum_id = ?
+		AND deleted_at IS NULL
+	`
+
+	// Execute thread query
+	threadRows, err := r.db.DB.Raw(threadQuery, forumID).Rows()
+	if err != nil {
+		return nil, err
+	}
+	defer threadRows.Close()
+
 	// Scan thread data
-	for rows.Next() {
-		var thread models.Thread
-		err = r.db.DB.ScanRows(rows, &thread)
+	for threadRows.Next() {
+		var t models.Thread
+		err = r.db.DB.ScanRows(threadRows, &t)
 		if err != nil {
 			return nil, err
 		}
-		res.ThreadData = append(res.ThreadData, thread)
+
+		res.ThreadData = append(res.ThreadData, t)
 	}
 
 	// Calculate total threads count
 	res.TotalThreads = len(res.ThreadData)
 
 	// Calculate number of members
-	query = `
+	membersQuery := `
 		SELECT COUNT(uf.user_id) AS number_of_members
 		FROM user_forums AS uf
 		WHERE uf.forum_id = ?
+		AND is_removed = 0
 	`
 
-	err = r.db.DB.Raw(query, forumID).Scan(&res.NumberOfMembers).Error
+	err = r.db.DB.Raw(membersQuery, forumID).Scan(&res.NumberOfMembers).Error
 	if err != nil {
 		return nil, err
 	}
