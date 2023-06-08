@@ -30,5 +30,6 @@ func (r *forumRoutes) Setup() {
 		auth.GET("/list", r.controller.ListUserForum)
 		auth.GET("/detail", r.controller.DetailForum)
 		auth.GET("/list-thread", r.controller.ListThreadForumHome)
+		auth.PUT("/remove", r.controller.RemoveFromForum)
 	}
 }

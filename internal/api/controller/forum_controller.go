@@ -17,8 +17,9 @@ type ForumController interface {
 	ListUserForum(c *gin.Context)
 	DetailForum(c *gin.Context)
 	ListThreadForumHome(c *gin.Context)
-	EditForum(c *gin.Context)   // only moderator
-	DeleteForum(c *gin.Context) // only moderator
+	EditForum(c *gin.Context)       // only moderator
+	DeleteForum(c *gin.Context)     // only moderator
+	RemoveFromForum(c *gin.Context) // only moderator
 }
 
 type forumController struct {
@@ -205,6 +206,42 @@ func (ctr *forumController) DeleteForum(c *gin.Context) {
 	}
 
 	err = ctr.services.DeleteForum(&req)
+
+	if err != nil {
+		lib.CommonLogger().Error(err)
+		helper.HandleErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	helper.HandleSuccessResponse(c, nil)
+}
+
+func (ctr *forumController) RemoveFromForum(c *gin.Context) {
+	var req request.ReqRemoveFromForum
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		lib.CommonLogger().Error(err)
+		helper.HandleErrorResponse(c, http.StatusBadRequest, "Bad request")
+		return
+	}
+
+	if err := ctr.validate.Struct(&req); err != nil {
+		lib.CommonLogger().Error(err)
+		helper.HandleErrorResponse(c, http.StatusBadRequest, "Bad input")
+		return
+	}
+
+	user := helper.GetUserData(c)
+
+	_, err := ctr.services.CheckModeratorForum(&request.ReqCheckModeratorForum{ForumID: req.ForumID, UserID: user.UserID})
+
+	if err != nil {
+		lib.CommonLogger().Error(err)
+		helper.HandleErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	err = ctr.services.RemoveFromForum(&req)
 
 	if err != nil {
 		lib.CommonLogger().Error(err)

@@ -29,3 +29,8 @@ type ReqDeleteForum struct {
 type ReqDetailForum struct {
 	ForumID uint `json:"forum_id" validate:"required"`
 }
+
+type ReqRemoveFromForum struct {
+	ForumID uint `json:"forum_id" validate:"required"`
+	UserID  uint `json:"user_id" validate:"required"`
+}

@@ -20,6 +20,7 @@ type ForumService interface {
 	ListUserForum(user *lib.UserData) ([]models.Forum, error)
 	ListThreadForumHome(user *lib.UserData) (*[]response.ResThreadForumHome, error)
 	DetailForum(req *request.ReqDetailForum) (*response.ResDetailForum, error)
+	RemoveFromForum(req *request.ReqRemoveFromForum) error
 	// ReadById(id uint) (*models.Forum, error)
 	// ExitForum(req *request.ReqExitForum) (*models.Forum, error)
 }
@@ -207,4 +208,33 @@ func (s *forumService) DeleteForum(req *request.ReqDeleteForum) error {
 	s.transactionRepo.CommitTransaction(tx)
 
 	return err
+}
+
+func (s *forumService) RemoveFromForum(req *request.ReqRemoveFromForum) error {
+	// Begin transaction
+	tx := s.transactionRepo.BeginTransaction()
+
+	// Defer the rollback in case of an error
+	defer func() {
+		if r := recover(); r != nil {
+			s.transactionRepo.RollbackTransaction(tx)
+		}
+	}()
+
+	// Check if user is indeed a member of the forum
+	userForum, _ := s.repository.GetUserForumByID(req.ForumID, req.UserID)
+	if userForum == nil {
+		return fmt.Errorf(helper.UserNotMember)
+	}
+
+	// Delete the user-forum relation
+	err := s.repository.RemoveFromForum(userForum)
+	if err != nil {
+		return err
+	}
+
+	// Commit the transaction
+	s.transactionRepo.CommitTransaction(tx)
+
+	return nil
 }

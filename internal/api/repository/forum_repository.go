@@ -23,6 +23,7 @@ type ForumRepository interface {
 	ListThreadForumHome(userID uint) (*[]response.ResThreadForumHome, error)
 	UpdateForum(forum *models.Forum, req *request.ReqEditForum) (*models.Forum, error)
 	DeleteForum(forum *models.Forum) error
+	RemoveFromForum(userForum *models.UserForum) error
 }
 
 type forumRepository struct {
@@ -55,7 +56,7 @@ func (r *forumRepository) GetForumById(id uint) (*models.Forum, error) {
 
 func (r *forumRepository) GetUserForumByID(forumID uint, userID uint) (*models.UserForum, error) {
 	var userForum models.UserForum
-	err := r.db.DB.Where("user_id = ?", userID).Where("forum_id = ?", forumID).First(&userForum).Error
+	err := r.db.DB.Where("user_id = ?", userID).Where("forum_id = ?", forumID).Where("is_removed = ?", false).First(&userForum).Error
 	if err != nil {
 		return nil, err
 	}
@@ -128,6 +129,7 @@ func (r *forumRepository) ListUserForum(user *lib.UserData) ([]models.Forum, err
 		Select("f.*").
 		Joins("inner join forums as f on f.id = uf.forum_id").
 		Where("uf.user_id = ?", user.UserID).
+		Where("uf.is_removed = ?", false).
 		Scan(&forums).Error
 
 	if err != nil {
@@ -217,6 +219,7 @@ func (r *forumRepository) ListThreadForumHome(userID uint) (*[]response.ResThrea
 		INNER JOIN forums AS f ON f.id = uf.forum_id
 		INNER JOIN threads AS t ON t.forum_id = f.id
 		WHERE uf.user_id = ?
+		AND uf.is_removed = 0
 		ORDER BY t.created_at DESC
 	`
 
@@ -251,6 +254,16 @@ func (r *forumRepository) UpdateForum(forum *models.Forum, req *request.ReqEditF
 
 func (r *forumRepository) DeleteForum(forum *models.Forum) error {
 	err := r.db.DB.Delete(&forum).Error
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *forumRepository) RemoveFromForum(userForum *models.UserForum) error {
+	err := r.db.DB.Model(&userForum).Update("is_removed", true).Error
 
 	if err != nil {
 		return err
