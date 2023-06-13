@@ -23,3 +23,10 @@ type ResThreadForumHome struct {
 	Title      string `json:"title"`
 	Text       string `json:"text"`
 }
+
+type ResSearchForum struct {
+	ForumID    uint   `json:"id" gorm:"column:id"`
+	ForumName  string `json:"forum_name"`
+	ForumImage string `json:"forum_image"`
+	Category   string `json:"category"`
+}

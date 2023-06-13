@@ -21,6 +21,7 @@ type ForumService interface {
 	ListThreadForumHome(user *lib.UserData) (*[]response.ResThreadForumHome, error)
 	DetailForum(req *request.ReqDetailForum) (*response.ResDetailForum, error)
 	RemoveFromForum(req *request.ReqRemoveFromForum) error
+	SearchForum(req *request.ReqSearchForum) (*[]response.ResSearchForum, error)
 	// ReadById(id uint) (*models.Forum, error)
 	// ExitForum(req *request.ReqExitForum) (*models.Forum, error)
 }
@@ -237,4 +238,15 @@ func (s *forumService) RemoveFromForum(req *request.ReqRemoveFromForum) error {
 	s.transactionRepo.CommitTransaction(tx)
 
 	return nil
+}
+
+func (s *forumService) SearchForum(req *request.ReqSearchForum) (*[]response.ResSearchForum, error) {
+	// Get the list of forums
+	forums, err := s.repository.SearchForum(req)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return forums, nil
 }

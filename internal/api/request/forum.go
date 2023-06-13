@@ -34,3 +34,8 @@ type ReqRemoveFromForum struct {
 	ForumID uint `json:"forum_id" validate:"required"`
 	UserID  uint `json:"user_id" validate:"required"`
 }
+
+type ReqSearchForum struct {
+	ForumName string `json:"forum_name"`
+	Category  string `json:"category"`
+}

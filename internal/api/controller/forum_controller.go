@@ -6,6 +6,7 @@ import (
 	"github.com/drdofx/talk-parmad/internal/api/helper"
 	"github.com/drdofx/talk-parmad/internal/api/lib"
 	"github.com/drdofx/talk-parmad/internal/api/request"
+	"github.com/drdofx/talk-parmad/internal/api/response"
 	"github.com/drdofx/talk-parmad/internal/api/services"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
@@ -17,6 +18,7 @@ type ForumController interface {
 	ListUserForum(c *gin.Context)
 	DetailForum(c *gin.Context)
 	ListThreadForumHome(c *gin.Context)
+	SearchForum(c *gin.Context)
 	EditForum(c *gin.Context)       // only moderator
 	DeleteForum(c *gin.Context)     // only moderator
 	RemoveFromForum(c *gin.Context) // only moderator
@@ -141,6 +143,37 @@ func (ctr *forumController) ListThreadForumHome(c *gin.Context) {
 	}
 
 	helper.HandleSuccessResponse(c, res)
+}
+
+func (ctr *forumController) SearchForum(c *gin.Context) {
+	var req request.ReqSearchForum
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		lib.CommonLogger().Error(err)
+		helper.HandleErrorResponse(c, http.StatusBadRequest, "Bad request")
+		return
+	}
+
+	if err := ctr.validate.Struct(&req); err != nil {
+		lib.CommonLogger().Error(err)
+		helper.HandleErrorResponse(c, http.StatusBadRequest, "Bad input")
+		return
+	}
+
+	res, err := ctr.services.SearchForum(&req)
+
+	if err != nil {
+		lib.CommonLogger().Error(err)
+		helper.HandleErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if len(*res) == 0 {
+		// give default response of empty slice
+		helper.HandleSuccessResponse(c, []response.ResSearchForum{})
+		return
+	}
+	helper.HandleSuccessResponse(c, *res)
 }
 
 // MODERATOR ONLY CONTROLLERS

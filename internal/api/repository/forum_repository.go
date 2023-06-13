@@ -24,6 +24,7 @@ type ForumRepository interface {
 	UpdateForum(forum *models.Forum, req *request.ReqEditForum) (*models.Forum, error)
 	DeleteForum(forum *models.Forum) error
 	RemoveFromForum(userForum *models.UserForum) error
+	SearchForum(req *request.ReqSearchForum) (*[]response.ResSearchForum, error)
 }
 
 type forumRepository struct {
@@ -270,4 +271,31 @@ func (r *forumRepository) RemoveFromForum(userForum *models.UserForum) error {
 	}
 
 	return nil
+}
+
+func (r *forumRepository) SearchForum(req *request.ReqSearchForum) (*[]response.ResSearchForum, error) {
+	var res []response.ResSearchForum
+
+	query := `
+		SELECT id, forum_name, forum_image, category
+		FROM forums
+		WHERE deleted_at IS NULL
+	`
+
+	if req.ForumName != "" {
+		query += ` AND forum_name LIKE '%` + req.ForumName + `%'`
+	}
+
+	if req.Category != "" {
+		query += ` AND category = '` + req.Category + `'`
+	}
+
+	err := r.db.DB.Raw(query).Scan(&res).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &res, nil
+
 }
