@@ -28,6 +28,7 @@ func (r *threadRoutes) Setup() {
 		auth.POST("/vote", r.controller.VoteThread)
 		auth.PUT("/edit", r.controller.EditThread)
 		auth.GET("/detail", r.controller.DetailThread)
+		auth.GET("/list", r.controller.ListUserThread)
 		auth.DELETE("/delete", r.controller.DeleteThread)
 
 		reply := auth.Group("/reply")
@@ -35,6 +36,7 @@ func (r *threadRoutes) Setup() {
 			reply.POST("/create", r.controller.CreateReply)
 			reply.POST("/vote", r.controller.VoteReply)
 			reply.PUT("/edit", r.controller.EditReply)
+			reply.GET("/list", r.controller.ListUserReply)
 			reply.DELETE("/delete", r.controller.DeleteReply)
 		}
 	}

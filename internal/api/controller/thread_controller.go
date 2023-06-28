@@ -21,6 +21,8 @@ type ThreadController interface {
 	CreateReply(c *gin.Context)
 	VoteReply(c *gin.Context)
 	EditReply(c *gin.Context)
+	ListUserThread(c *gin.Context)
+	ListUserReply(c *gin.Context)
 	DeleteThread(c *gin.Context) // only moderator
 	DeleteReply(c *gin.Context)  // only moderator
 }
@@ -119,10 +121,38 @@ func (ctr *threadController) EditThread(c *gin.Context) {
 	helper.HandleSuccessResponse(c, res)
 }
 
+func (ctr *threadController) ListUserThread(c *gin.Context) {
+	user := helper.GetUserData(c)
+
+	res, err := ctr.services.ListUserThread(&user)
+
+	if err != nil {
+		lib.CommonLogger().Error(err)
+		helper.HandleErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	helper.HandleSuccessResponse(c, res)
+}
+
+func (ctr *threadController) ListUserReply(c *gin.Context) {
+	user := helper.GetUserData(c)
+
+	res, err := ctr.services.ListUserReply(&user)
+
+	if err != nil {
+		lib.CommonLogger().Error(err)
+		helper.HandleErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	helper.HandleSuccessResponse(c, res)
+}
+
 func (ctr *threadController) DetailThread(c *gin.Context) {
 	var req request.ReqDetailThread
 
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := c.ShouldBindQuery(&req); err != nil {
 		lib.CommonLogger().Error(err)
 		helper.HandleErrorResponse(c, http.StatusBadRequest, "Bad request")
 		return

@@ -27,7 +27,7 @@ type ReqDeleteForum struct {
 }
 
 type ReqDetailForum struct {
-	ForumID uint `json:"forum_id" validate:"required"`
+	ForumID uint `json:"forum_id" form:"id" validate:"required"`
 }
 
 type ReqRemoveFromForum struct {
@@ -36,6 +36,6 @@ type ReqRemoveFromForum struct {
 }
 
 type ReqSearchForum struct {
-	ForumName string `json:"forum_name"`
-	Category  string `json:"category"`
+	ForumName string `json:"forum_name" form:"forum_name"`
+	Category  string `json:"category" form:"category"`
 }

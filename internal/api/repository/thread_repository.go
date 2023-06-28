@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/drdofx/talk-parmad/internal/api/database"
+	"github.com/drdofx/talk-parmad/internal/api/lib"
 	"github.com/drdofx/talk-parmad/internal/api/models"
 	"github.com/drdofx/talk-parmad/internal/api/request"
 	"github.com/drdofx/talk-parmad/internal/api/response"
@@ -15,6 +16,8 @@ type ThreadRepository interface {
 	CreateOrUpdateThreadVote(thread *models.Thread, req *request.ReqVoteThread, userID uint) (*models.ThreadVote, error)
 	UpdateThread(thread *models.Thread, req *request.ReqEditThread) (*models.Thread, error)
 	DetailThread(threadID uint) (*response.ResDetailThread, error)
+	ListUserThread(user *lib.UserData) ([]models.Thread, error)
+	ListUserReply(user *lib.UserData) ([]*response.ResListThreadReply, error)
 	GetReplyByID(id uint) (*models.Reply, error)
 	CreateReply(req *request.ReqSaveReply, threadID uint, userID uint) (*models.Reply, error)
 	CreateOrUpdateReplyVote(reply *models.Reply, req *request.ReqVoteReply, userID uint) (*models.ReplyVote, error)
@@ -154,6 +157,41 @@ func (r *threadRepository) DetailThread(threadID uint) (*response.ResDetailThrea
 
 	res.TotalReplies = len(res.ReplyData)
 	return &res, nil
+}
+
+func (r *threadRepository) ListUserThread(user *lib.UserData) ([]models.Thread, error) {
+	var threads []models.Thread
+
+	err := r.db.DB.
+		Where("created_by = ?", user.UserID).
+		Where("deleted_at IS NULL").
+		Order("created_at DESC").
+		Find(&threads).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return threads, nil
+}
+
+func (r *threadRepository) ListUserReply(user *lib.UserData) ([]*response.ResListThreadReply, error) {
+	var res []*response.ResListThreadReply
+
+	err := r.db.DB.
+		Table("replies r").
+		Select("t.*, r.*").
+		Joins("LEFT JOIN threads t ON t.id = r.thread_id").
+		Where("r.created_by = ?", user.UserID).
+		Where("r.deleted_at IS NULL").
+		Order("r.created_at DESC").
+		Scan(&res).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
 }
 
 func (r *threadRepository) GetReplyByID(id uint) (*models.Reply, error) {

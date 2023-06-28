@@ -106,7 +106,7 @@ func (ctr *forumController) ListUserForum(c *gin.Context) {
 func (ctr *forumController) DetailForum(c *gin.Context) {
 	var req request.ReqDetailForum
 
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := c.ShouldBindQuery(&req); err != nil {
 		lib.CommonLogger().Error(err)
 		helper.HandleErrorResponse(c, http.StatusBadRequest, "Bad request")
 		return
@@ -148,7 +148,7 @@ func (ctr *forumController) ListThreadForumHome(c *gin.Context) {
 func (ctr *forumController) SearchForum(c *gin.Context) {
 	var req request.ReqSearchForum
 
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := c.ShouldBindQuery(&req); err != nil {
 		lib.CommonLogger().Error(err)
 		helper.HandleErrorResponse(c, http.StatusBadRequest, "Bad request")
 		return

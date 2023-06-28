@@ -1,5 +1,7 @@
 package response
 
+import "github.com/drdofx/talk-parmad/internal/api/models"
+
 type ResDetailThread struct {
 	ThreadData     ResThreadField  `json:"thread"`
 	ReplyData      []ResReplyField `json:"reply"`
@@ -7,6 +9,11 @@ type ResDetailThread struct {
 	TotalUpvotes   int64           `json:"total_upvotes"`
 	TotalDownvotes int64           `json:"total_downvotes"`
 	CreatedBy      string          `json:"created_by"`
+}
+
+type ResListThreadReply struct {
+	models.Thread `json:"thread"`
+	models.Reply  `json:"reply"`
 }
 
 type ResThreadField struct {
