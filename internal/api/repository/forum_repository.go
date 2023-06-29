@@ -215,8 +215,9 @@ func (r *forumRepository) ListThreadForumHome(userID uint) (*[]response.ResThrea
 	var res []response.ResThreadForumHome
 
 	query := `
-		SELECT uf.user_id, f.forum_name, f.forum_image, f.id AS forum_id, t.id AS thread_id, t.title, t.text
+		SELECT uf.user_id, u.name AS user_name, f.forum_name, f.forum_image, f.id AS forum_id, t.id AS thread_id, t.title, t.text
 		FROM user_forums AS uf
+		INNER JOIN users AS u ON u.id = uf.user_id
 		INNER JOIN forums AS f ON f.id = uf.forum_id
 		INNER JOIN threads AS t ON t.forum_id = f.id
 		WHERE uf.user_id = ?

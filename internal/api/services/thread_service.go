@@ -20,7 +20,7 @@ type ThreadService interface {
 	CreateReply(req *request.ReqSaveReply, user *lib.UserData) (*models.Reply, error)
 	VoteReply(req *request.ReqVoteReply, user *lib.UserData) (*models.ReplyVote, error)
 	EditReply(req *request.ReqEditReply, user *lib.UserData) (*models.Reply, error)
-	ListUserThread(user *lib.UserData) ([]models.Thread, error)
+	ListUserThread(user *lib.UserData) ([]*response.ResListThread, error)
 	ListUserReply(user *lib.UserData) ([]*response.ResListThreadReply, error)
 	GetThreadByID(threadID uint) (*models.Thread, error)
 	CheckModeratorForumFromThread(thread *models.Thread, user *lib.UserData) (bool, error)
@@ -144,7 +144,7 @@ func (s *threadService) EditThread(req *request.ReqEditThread, user *lib.UserDat
 	return updatedThread, nil
 }
 
-func (s *threadService) ListUserThread(user *lib.UserData) ([]models.Thread, error) {
+func (s *threadService) ListUserThread(user *lib.UserData) ([]*response.ResListThread, error) {
 	// Get the thread data
 	threads, err := s.repository.ListUserThread(user)
 	if err != nil {

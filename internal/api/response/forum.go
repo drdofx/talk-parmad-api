@@ -16,6 +16,7 @@ type ResThreadForum struct {
 
 type ResThreadForumHome struct {
 	UserID     uint   `json:"user_id"`
+	UserName   string `json:"user_name"`
 	ForumID    uint   `json:"forum_id"`
 	ForumName  string `json:"forum_name"`
 	ForumImage string `json:"forum_image"`

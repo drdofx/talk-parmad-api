@@ -11,9 +11,17 @@ type ResDetailThread struct {
 	CreatedBy      string          `json:"created_by"`
 }
 
+type ResListThread struct {
+	models.Thread
+	ForumName  string `json:"forum_name"`
+	ForumImage string `json:"forum_image"`
+}
+
 type ResListThreadReply struct {
 	models.Thread `json:"thread"`
 	models.Reply  `json:"reply"`
+	ForumName     string `json:"forum_name"`
+	ForumImage    string `json:"forum_image"`
 }
 
 type ResThreadField struct {

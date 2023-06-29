@@ -16,7 +16,7 @@ type ThreadRepository interface {
 	CreateOrUpdateThreadVote(thread *models.Thread, req *request.ReqVoteThread, userID uint) (*models.ThreadVote, error)
 	UpdateThread(thread *models.Thread, req *request.ReqEditThread) (*models.Thread, error)
 	DetailThread(threadID uint) (*response.ResDetailThread, error)
-	ListUserThread(user *lib.UserData) ([]models.Thread, error)
+	ListUserThread(user *lib.UserData) ([]*response.ResListThread, error)
 	ListUserReply(user *lib.UserData) ([]*response.ResListThreadReply, error)
 	GetReplyByID(id uint) (*models.Reply, error)
 	CreateReply(req *request.ReqSaveReply, threadID uint, userID uint) (*models.Reply, error)
@@ -159,20 +159,23 @@ func (r *threadRepository) DetailThread(threadID uint) (*response.ResDetailThrea
 	return &res, nil
 }
 
-func (r *threadRepository) ListUserThread(user *lib.UserData) ([]models.Thread, error) {
-	var threads []models.Thread
+func (r *threadRepository) ListUserThread(user *lib.UserData) ([]*response.ResListThread, error) {
+	var res []*response.ResListThread
 
 	err := r.db.DB.
-		Where("created_by = ?", user.UserID).
-		Where("deleted_at IS NULL").
-		Order("created_at DESC").
-		Find(&threads).Error
+		Table("threads t").
+		Select("t.*, f.forum_name, f.forum_image").
+		Joins("LEFT JOIN forums f ON f.id = t.forum_id").
+		Where("t.created_by = ?", user.UserID).
+		Where("t.deleted_at IS NULL").
+		Order("t.created_at DESC").
+		Scan(&res).Error
 
 	if err != nil {
 		return nil, err
 	}
 
-	return threads, nil
+	return res, nil
 }
 
 func (r *threadRepository) ListUserReply(user *lib.UserData) ([]*response.ResListThreadReply, error) {
@@ -180,8 +183,9 @@ func (r *threadRepository) ListUserReply(user *lib.UserData) ([]*response.ResLis
 
 	err := r.db.DB.
 		Table("replies r").
-		Select("t.*, r.*").
+		Select("t.*, r.*, f.forum_name, f.forum_image").
 		Joins("LEFT JOIN threads t ON t.id = r.thread_id").
+		Joins("LEFT JOIN forums f ON f.id = t.forum_id").
 		Where("r.created_by = ?", user.UserID).
 		Where("r.deleted_at IS NULL").
 		Order("r.created_at DESC").
