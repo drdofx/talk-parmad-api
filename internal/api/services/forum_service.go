@@ -19,7 +19,8 @@ type ForumService interface {
 	DeleteForum(req *request.ReqDeleteForum) error
 	ListUserForum(user *lib.UserData) ([]models.Forum, error)
 	ListThreadForumHome(user *lib.UserData) (*[]response.ResThreadForumHome, error)
-	DetailForum(req *request.ReqDetailForum) (*response.ResDetailForum, error)
+	DiscoverForum(user *lib.UserData) ([]models.Forum, error)
+	DetailForum(user *lib.UserData, req *request.ReqDetailForum) (*response.ResDetailForum, error)
 	RemoveFromForum(req *request.ReqRemoveFromForum) error
 	SearchForum(req *request.ReqSearchForum) (*[]response.ResSearchForum, error)
 	// ReadById(id uint) (*models.Forum, error)
@@ -138,11 +139,29 @@ func (s *forumService) ListUserForum(user *lib.UserData) ([]models.Forum, error)
 	return forums, nil
 }
 
-func (s *forumService) DetailForum(req *request.ReqDetailForum) (*response.ResDetailForum, error) {
-	// Get the forum detail, including the list of threads
-	forum, err := s.repository.DetailForum(req.ForumID)
+func (s *forumService) DiscoverForum(user *lib.UserData) ([]models.Forum, error) {
+	// Get the list of not joined forums
+	forums, err := s.repository.DiscoverForum(user)
 	if err != nil {
 		return nil, err
+	}
+
+	return forums, nil
+}
+
+func (s *forumService) DetailForum(user *lib.UserData, req *request.ReqDetailForum) (*response.ResDetailForum, error) {
+	// Get the forum detail, including the list of threads
+	forum, err := s.repository.DetailForum(user, req.ForumID)
+	if err != nil {
+		return nil, err
+	}
+
+	// check if user is a member of the forum
+	userForum, _ := s.repository.GetUserForumByID(req.ForumID, user.UserID)
+	if userForum == nil {
+		forum.IsMember = false
+	} else {
+		forum.IsMember = true
 	}
 
 	return forum, nil

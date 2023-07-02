@@ -28,6 +28,7 @@ func (r *forumRoutes) Setup() {
 		auth.PUT("/edit", r.controller.EditForum)
 		auth.DELETE("/delete", r.controller.DeleteForum)
 		auth.GET("/list", r.controller.ListUserForum)
+		auth.GET("/discover", r.controller.ListDiscoverForum)
 		auth.GET("/detail", r.controller.DetailForum)
 		auth.GET("/list-thread", r.controller.ListThreadForumHome)
 		auth.PUT("/remove", r.controller.RemoveFromForum)

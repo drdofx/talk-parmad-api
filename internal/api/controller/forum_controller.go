@@ -16,6 +16,7 @@ type ForumController interface {
 	CreateForum(c *gin.Context)
 	JoinForum(c *gin.Context)
 	ListUserForum(c *gin.Context)
+	ListDiscoverForum(c *gin.Context)
 	DetailForum(c *gin.Context)
 	ListThreadForumHome(c *gin.Context)
 	SearchForum(c *gin.Context)
@@ -103,6 +104,20 @@ func (ctr *forumController) ListUserForum(c *gin.Context) {
 	helper.HandleSuccessResponse(c, res)
 }
 
+func (ctr *forumController) ListDiscoverForum(c *gin.Context) {
+	user := helper.GetUserData(c)
+
+	res, err := ctr.services.DiscoverForum(&user)
+
+	if err != nil {
+		lib.CommonLogger().Error(err)
+		helper.HandleErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	helper.HandleSuccessResponse(c, res)
+}
+
 func (ctr *forumController) DetailForum(c *gin.Context) {
 	var req request.ReqDetailForum
 
@@ -118,9 +133,9 @@ func (ctr *forumController) DetailForum(c *gin.Context) {
 		return
 	}
 
-	// user := helper.GetUserData(c)
+	user := helper.GetUserData(c)
 
-	res, err := ctr.services.DetailForum(&req)
+	res, err := ctr.services.DetailForum(&user, &req)
 
 	if err != nil {
 		lib.CommonLogger().Error(err)

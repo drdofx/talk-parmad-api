@@ -19,7 +19,8 @@ type ForumRepository interface {
 	CreateModeratorHead(forum *models.Forum, user *lib.UserData) (*models.Moderator, error)
 	CreateUserForum(forum *models.Forum, user *lib.UserData) (*models.UserForum, error)
 	ListUserForum(user *lib.UserData) ([]models.Forum, error)
-	DetailForum(forumID uint) (*response.ResDetailForum, error)
+	DiscoverForum(user *lib.UserData) ([]models.Forum, error)
+	DetailForum(user *lib.UserData, forumID uint) (*response.ResDetailForum, error)
 	ListThreadForumHome(userID uint) (*[]response.ResThreadForumHome, error)
 	UpdateForum(forum *models.Forum, req *request.ReqEditForum) (*models.Forum, error)
 	DeleteForum(forum *models.Forum) error
@@ -140,7 +141,22 @@ func (r *forumRepository) ListUserForum(user *lib.UserData) ([]models.Forum, err
 	return forums, nil
 }
 
-func (r *forumRepository) DetailForum(forumID uint) (*response.ResDetailForum, error) {
+func (r *forumRepository) DiscoverForum(user *lib.UserData) ([]models.Forum, error) {
+	var forums []models.Forum
+	err := r.db.DB.
+		Table("forums").
+		Where("forums.id NOT IN (SELECT forum_id FROM user_forums WHERE user_id = ?)", user.UserID).
+		Where("forums.deleted_at IS NULL").
+		Scan(&forums).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return forums, nil
+}
+
+func (r *forumRepository) DetailForum(user *lib.UserData, forumID uint) (*response.ResDetailForum, error) {
 	var res response.ResDetailForum
 
 	forumQuery := `
@@ -168,10 +184,11 @@ func (r *forumRepository) DetailForum(forumID uint) (*response.ResDetailForum, e
 	}
 
 	threadQuery := `
-		SELECT *
-		FROM threads
+		SELECT t.id, t.title, t.text, t.created_at, u.name AS created_by, u.profile_image AS created_by_image
+		FROM threads t
+		INNER JOIN users AS u ON u.id = t.created_by
 		WHERE forum_id = ?
-		AND deleted_at IS NULL
+		AND t.deleted_at IS NULL
 	`
 
 	// Execute thread query
@@ -183,7 +200,7 @@ func (r *forumRepository) DetailForum(forumID uint) (*response.ResDetailForum, e
 
 	// Scan thread data
 	for threadRows.Next() {
-		var t models.Thread
+		var t response.ResDetailForumThreads
 		err = r.db.DB.ScanRows(threadRows, &t)
 		if err != nil {
 			return nil, err
