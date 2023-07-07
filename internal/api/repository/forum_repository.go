@@ -189,6 +189,7 @@ func (r *forumRepository) DetailForum(user *lib.UserData, forumID uint) (*respon
 		INNER JOIN users AS u ON u.id = t.created_by
 		WHERE forum_id = ?
 		AND t.deleted_at IS NULL
+		ORDER BY t.created_at DESC
 	`
 
 	// Execute thread query
